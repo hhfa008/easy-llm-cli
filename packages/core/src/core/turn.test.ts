@@ -177,6 +177,18 @@ describe('Turn', () => {
               },
               isClientInitiated: false,
             },
+            {
+              id: 'fc3',
+              name: `run_shell_command</arg_value><arg_value>command</arg_key><arg_value>find src
+
+echo
+
+echo "✅ 搜索 src 下所有文件和目录（100个文件）"
+echo ""
+</arg_value>`,
+              args: {},
+              isClientInitiated: false,
+            },
           ],
         } as unknown as GenerateContentResponse;
       })();
@@ -203,6 +215,17 @@ describe('Turn', () => {
       expect(event2.value.args).toEqual({
         command: 'cd /work/project && git status',
         description: 'Check status',
+      });
+
+      const event3 = events[2] as ServerGeminiToolCallRequestEvent;
+      expect(event3.value.name).toBe('run_shell_command');
+      expect(event3.value.args).toEqual({
+        command: `find src
+
+echo
+
+echo "✅ 搜索 src 下所有文件和目录（100个文件）"
+echo ""`,
       });
     });
 

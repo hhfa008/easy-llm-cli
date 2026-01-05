@@ -291,20 +291,40 @@ function normalizeFunctionCall(fnCall: FunctionCall): {
 
   const mergedArgs: Record<string, unknown> = { ...args };
   if (typeof mergedArgs.command !== 'string' || mergedArgs.command.length === 0) {
-    const tagMatch = rawName.match(/<arg_value>([\s\S]*?)<\/arg_value>/);
-    if (tagMatch && tagMatch[1]) {
-      mergedArgs.command = tagMatch[1];
+    const commandKeyValueMatch =
+      rawName.match(
+        /<arg_key>\s*command\s*<\/arg_key>\s*<arg_value>([\s\S]*?)<\/arg_value>/,
+      ) ?? rawName.match(/command\s*<\/arg_key>\s*<arg_value>([\s\S]*?)<\/arg_value>/);
+    if (commandKeyValueMatch && commandKeyValueMatch[1]) {
+      mergedArgs.command = commandKeyValueMatch[1].trim();
     } else {
-      const jsonStart = rawName.indexOf('{');
-      const jsonEnd = rawName.lastIndexOf('}');
-      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-        try {
-          const parsed = JSON.parse(rawName.slice(jsonStart, jsonEnd + 1));
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            Object.assign(mergedArgs, parsed, mergedArgs);
+      const tagMatch = rawName.match(/<arg_value>([\s\S]*?)<\/arg_value>/);
+      if (tagMatch && tagMatch[1]) {
+        let extracted = tagMatch[1];
+        const markers = [
+          '<arg_key>command</arg_key><arg_value>',
+          'command</arg_key><arg_value>',
+        ];
+        for (const marker of markers) {
+          const markerIndex = extracted.indexOf(marker);
+          if (markerIndex !== -1) {
+            extracted = extracted.slice(markerIndex + marker.length);
+            break;
           }
-        } catch {
-          // ignore
+        }
+        mergedArgs.command = extracted.trim();
+      } else {
+        const jsonStart = rawName.indexOf('{');
+        const jsonEnd = rawName.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          try {
+            const parsed = JSON.parse(rawName.slice(jsonStart, jsonEnd + 1));
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              Object.assign(mergedArgs, parsed, mergedArgs);
+            }
+          } catch {
+            // ignore
+          }
         }
       }
     }
