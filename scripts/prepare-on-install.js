@@ -32,10 +32,19 @@ const ensureBuildDepsInstalled = () => {
     // continue below
   }
 
-  const installResult = spawnSync('npm', ['ci', '--ignore-scripts'], {
+  const npmEnv = {
+    ...process.env,
+    npm_config_global: 'false',
+    npm_config_location: 'project',
+    npm_config_production: 'false',
+    NODE_ENV: 'development',
+  };
+
+  const installResult = spawnSync('npm', ['install', '--ignore-scripts'], {
     cwd: root,
     stdio: 'inherit',
     shell: process.platform === 'win32',
+    env: npmEnv,
   });
 
   if (installResult.status !== 0) {
