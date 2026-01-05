@@ -15,6 +15,11 @@ const __dirname = path.dirname(__filename);
 const root = path.join(__dirname, '..');
 const require = createRequire(import.meta.url);
 
+const PREPARE_GUARD_ENV = 'EASY_LLM_CLI_SKIP_PREPARE';
+if (process.env[PREPARE_GUARD_ENV] === '1') {
+  process.exit(0);
+}
+
 const bundleFiles = ['bundle/gemini.js', 'bundle/api.js', 'bundle/api.cjs'].map(
   (relPath) => path.join(root, relPath),
 );
@@ -37,10 +42,12 @@ const ensureBuildDepsInstalled = () => {
     npm_config_global: 'false',
     npm_config_location: 'project',
     npm_config_production: 'false',
+    npm_config_ignore_scripts: 'false',
     NODE_ENV: 'development',
+    [PREPARE_GUARD_ENV]: '1',
   };
 
-  const installResult = spawnSync('npm', ['install', '--ignore-scripts'], {
+  const installResult = spawnSync('npm', ['install', '--include=dev'], {
     cwd: root,
     stdio: 'inherit',
     shell: process.platform === 'win32',
@@ -58,6 +65,11 @@ const result = spawnSync('npm', ['run', 'bundle'], {
   cwd: root,
   stdio: 'inherit',
   shell: process.platform === 'win32',
+  env: {
+    ...process.env,
+    npm_config_global: 'false',
+    npm_config_location: 'project',
+  },
 });
 
 process.exit(result.status ?? 1);
