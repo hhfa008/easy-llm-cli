@@ -244,8 +244,9 @@ export class Turn {
     const callId =
       fnCall.id ??
       `${fnCall.name}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const name = fnCall.name || 'undefined_tool_name';
-    const args = (fnCall.args || {}) as Record<string, unknown>;
+    const normalized = normalizeFunctionCall(fnCall);
+    const name = normalized.name || 'undefined_tool_name';
+    const args = normalized.args;
 
     const toolCallRequest: ToolCallRequestInfo = {
       callId,
@@ -263,4 +264,51 @@ export class Turn {
   getDebugResponses(): GenerateContentResponse[] {
     return this.debugResponses;
   }
+}
+
+function normalizeFunctionCall(fnCall: FunctionCall): {
+  name: string;
+  args: Record<string, unknown>;
+} {
+  const rawName = (fnCall.name || '').trim();
+  const args = (fnCall.args || {}) as Record<string, unknown>;
+
+  if (!rawName) {
+    return { name: rawName, args };
+  }
+
+  const nameMatch = rawName.match(/^[a-zA-Z0-9_]+/);
+  if (!nameMatch) {
+    return { name: rawName, args };
+  }
+
+  const baseName = nameMatch[0];
+  const normalizedName = baseName.replace(/(_command)(?:_command)+$/, '$1');
+
+  if (normalizedName !== 'run_shell_command') {
+    return { name: normalizedName, args };
+  }
+
+  const mergedArgs: Record<string, unknown> = { ...args };
+  if (typeof mergedArgs.command !== 'string' || mergedArgs.command.length === 0) {
+    const tagMatch = rawName.match(/<arg_value>([\s\S]*?)<\/arg_value>/);
+    if (tagMatch && tagMatch[1]) {
+      mergedArgs.command = tagMatch[1];
+    } else {
+      const jsonStart = rawName.indexOf('{');
+      const jsonEnd = rawName.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        try {
+          const parsed = JSON.parse(rawName.slice(jsonStart, jsonEnd + 1));
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            Object.assign(mergedArgs, parsed, mergedArgs);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  return { name: normalizedName, args: mergedArgs };
 }

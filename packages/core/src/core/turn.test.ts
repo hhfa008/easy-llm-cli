@@ -158,6 +158,54 @@ describe('Turn', () => {
       expect(turn.getDebugResponses().length).toBe(1);
     });
 
+    it('should normalize malformed run_shell_command calls', async () => {
+      const mockResponseStream = (async function* () {
+        yield {
+          functionCalls: [
+            {
+              id: 'fc1',
+              name: "run_shell_command command</arg_key></arg_key><arg_value>bash scripts/create_arch_structure.sh</arg_value>",
+              args: { description: 'Execute script' },
+              isClientInitiated: false,
+            },
+            {
+              id: 'fc2',
+              name: 'run_shell_command_command',
+              args: {
+                command: 'cd /work/project && git status',
+                description: 'Check status',
+              },
+              isClientInitiated: false,
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+      mockSendMessageStream.mockResolvedValue(mockResponseStream);
+
+      const events = [];
+      const reqParts: Part[] = [{ text: 'Use tools' }];
+      for await (const event of turn.run(
+        reqParts,
+        new AbortController().signal,
+      )) {
+        events.push(event);
+      }
+
+      const event1 = events[0] as ServerGeminiToolCallRequestEvent;
+      expect(event1.value.name).toBe('run_shell_command');
+      expect(event1.value.args).toEqual({
+        description: 'Execute script',
+        command: 'bash scripts/create_arch_structure.sh',
+      });
+
+      const event2 = events[1] as ServerGeminiToolCallRequestEvent;
+      expect(event2.value.name).toBe('run_shell_command');
+      expect(event2.value.args).toEqual({
+        command: 'cd /work/project && git status',
+        description: 'Check status',
+      });
+    });
+
     it('should yield UserCancelled event if signal is aborted', async () => {
       const abortController = new AbortController();
       const mockResponseStream = (async function* () {
