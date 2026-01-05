@@ -14,8 +14,7 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const pkg = require(path.resolve(__dirname, 'package.json'));
 
-esbuild
-  .build({
+const cliBuild = esbuild.build({
     entryPoints: ['packages/cli/index.ts'],
     bundle: true,
     outfile: 'bundle/gemini.js',
@@ -27,8 +26,7 @@ esbuild
     banner: {
       js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
     },
-  })
-  .catch(() => process.exit(1));
+  });
 
 // Build API bundle
 
@@ -59,18 +57,15 @@ const commonAPIOptions = {
     'zlib',
   ],
 };
-esbuild
-  .build({
+const apiEsmBuild = esbuild.build({
     ...commonAPIOptions,
     outfile: 'bundle/api.js',
     format: 'esm',
     banner: {
       js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
     },
-  })
-  .catch(() => process.exit(1));
-esbuild
-  .build({
+  });
+const apiCjsBuild = esbuild.build({
     ...commonAPIOptions,
     outfile: 'bundle/api.cjs',
     format: 'cjs',
@@ -78,5 +73,6 @@ esbuild
     banner: {
       js: "const _importMetaUrl=require('url').pathToFileURL(__filename)",
     },
-  })
-  .catch(() => process.exit(1));
+  });
+
+await Promise.all([cliBuild, apiEsmBuild, apiCjsBuild]);
