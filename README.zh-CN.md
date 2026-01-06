@@ -82,6 +82,23 @@ export CUSTOM_LLM_TOP_P=1          # Top P 参数（默认值：1）
 
 - 详细说明：`docs/custom-llm.zh-CN.md`
 
+## 会话保存 / 恢复（/chat）
+
+- 退出时自动保存：输入 `/quit`（或 `/exit`）退出时，会自动保存一个会话检查点（默认 tag：`autosave`）。
+  - Ctrl+C 连按两次 / Ctrl+D 连按两次退出，同样会触发 `/quit`（因此也会自动保存）。
+- 恢复上次会话：`/chat resume autosave`
+- 手动保存：`/chat save <tag>`；查看列表：`/chat list`
+- 关闭自动保存：`EASY_LLM_CLI_AUTOSAVE_CHAT=0`（或 `false`/`no`）
+- 自定义 autosave tag：`EASY_LLM_CLI_AUTOSAVE_TAG=<tag>`
+
+## 任务执行时继续输入（队列）
+
+当模型/工具正在执行时，输入框仍然可编辑；此时按回车会把消息加入队列，等当前任务结束后自动按顺序发送。执行中会在加载提示右侧显示 `queued: N`。
+
+## 图片识别（多模态）
+
+在输入中使用 `@path/to/image.png` / `.jpg` / `.webp` / `.pdf` 等文件，CLI 会以多模态 part 发送给模型（自定义 LLM 模式会转换成 OpenAI `image_url`）。
+
 ## 示例
 
 一旦 CLI 运行起来，你就可以从 shell 中与 Gemini 交互了。

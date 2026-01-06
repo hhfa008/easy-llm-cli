@@ -83,6 +83,23 @@ When these variables are set, Easy LLM CLI will use your custom LLM instead of t
 
 - More details: `docs/custom-llm.md`
 
+## Session Save / Resume (`/chat`)
+
+- Autosave on exit: use `/quit` (or `/exit`) to exit, and Easy LLM CLI will save a conversation checkpoint (default tag: `autosave`).
+  - Pressing Ctrl+C twice / Ctrl+D twice also triggers `/quit` (so it also autosaves).
+- Resume last session: `/chat resume autosave`
+- Save manually: `/chat save <tag>`; list: `/chat list`
+- Disable autosave: `EASY_LLM_CLI_AUTOSAVE_CHAT=0` (or `false`/`no`)
+- Customize autosave tag: `EASY_LLM_CLI_AUTOSAVE_TAG=<tag>`
+
+## Keep Typing While Running (Queue)
+
+While the model/tools are running, the input stays editable; pressing Enter queues your message and it will be sent automatically once the current turn finishes. The loading indicator shows `queued: N` while running.
+
+## Multimodal (Images/PDF)
+
+Use `@path/to/image.png` / `.jpg` / `.webp` / `.pdf` in your prompt; the CLI sends it as a multimodal part (and in custom LLM mode it converts to OpenAI `image_url`).
+
 ## Examples
 
 Once the CLI is running, you can start interacting with Gemini from your shell.

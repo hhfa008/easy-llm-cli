@@ -29,7 +29,8 @@ export async function checkForUpdates(): Promise<string | null> {
       notifier.update &&
       semver.gt(notifier.update.latest, notifier.update.current)
     ) {
-      return null;
+      const pkgName = packageJson.name;
+      return `Update available: ${notifier.update.current} → ${notifier.update.latest} (run: npm i -g ${pkgName})`;
     }
 
     return null;

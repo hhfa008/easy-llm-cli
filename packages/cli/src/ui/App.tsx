@@ -428,14 +428,21 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     useLoadingIndicator(streamingState);
   const showAutoAcceptIndicator = useAutoAcceptIndicator({ config });
 
+  const [queuedSubmissions, setQueuedSubmissions] = useState<string[]>([]);
+  const queueFlushPromiseRef = useRef<Promise<void> | null>(null);
+
   const handleFinalSubmit = useCallback(
     (submittedValue: string) => {
       const trimmedValue = submittedValue.trim();
       if (trimmedValue.length > 0) {
+        if (streamingState !== StreamingState.Idle) {
+          setQueuedSubmissions((prev) => [...prev, trimmedValue]);
+          return;
+        }
         submitQuery(trimmedValue);
       }
     },
-    [submitQuery],
+    [streamingState, submitQuery],
   );
 
   const logger = useLogger();
@@ -477,7 +484,25 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     fetchUserMessages();
   }, [history, logger]);
 
-  const isInputActive = streamingState === StreamingState.Idle && !initError;
+  useEffect(() => {
+    if (streamingState !== StreamingState.Idle) {
+      return;
+    }
+    if (queuedSubmissions.length === 0) {
+      return;
+    }
+    if (queueFlushPromiseRef.current) {
+      return;
+    }
+
+    const next = queuedSubmissions[0];
+    setQueuedSubmissions((prev) => prev.slice(1));
+    queueFlushPromiseRef.current = submitQuery(next).finally(() => {
+      queueFlushPromiseRef.current = null;
+    });
+  }, [queuedSubmissions, streamingState, submitQuery]);
+
+  const isInputFocused = streamingState !== StreamingState.WaitingForConfirmation;
 
   const handleClearScreen = useCallback(() => {
     clearItems();
@@ -713,6 +738,13 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                     : currentLoadingPhrase
                 }
                 elapsedTime={elapsedTime}
+                rightContent={
+                  queuedSubmissions.length > 0 ? (
+                    <Text color={Colors.Gray}>
+                      queued: {queuedSubmissions.length}
+                    </Text>
+                  ) : undefined
+                }
               />
               <Box
                 marginTop={1}
@@ -767,21 +799,20 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 </OverflowProvider>
               )}
 
-              {isInputActive && (
-                <InputPrompt
-                  buffer={buffer}
-                  inputWidth={inputWidth}
-                  suggestionsWidth={suggestionsWidth}
-                  onSubmit={handleFinalSubmit}
-                  userMessages={userMessages}
-                  onClearScreen={handleClearScreen}
-                  config={config}
-                  slashCommands={slashCommands}
-                  commandContext={commandContext}
-                  shellModeActive={shellModeActive}
-                  setShellModeActive={setShellModeActive}
-                />
-              )}
+              <InputPrompt
+                buffer={buffer}
+                inputWidth={inputWidth}
+                suggestionsWidth={suggestionsWidth}
+                onSubmit={handleFinalSubmit}
+                userMessages={userMessages}
+                onClearScreen={handleClearScreen}
+                config={config}
+                slashCommands={slashCommands}
+                commandContext={commandContext}
+                shellModeActive={shellModeActive}
+                setShellModeActive={setShellModeActive}
+                focus={isInputFocused}
+              />
             </>
           )}
 

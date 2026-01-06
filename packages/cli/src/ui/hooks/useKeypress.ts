@@ -46,6 +46,7 @@ export function useKeypress(
       return;
     }
 
+    const wasRaw = stdin.isRaw ?? false;
     setRawMode(true);
 
     const rl = readline.createInterface({ input: stdin });
@@ -85,7 +86,7 @@ export function useKeypress(
     return () => {
       stdin.removeListener('keypress', handleKeypress);
       rl.close();
-      setRawMode(false);
+      setRawMode(wasRaw);
 
       // If we are in the middle of a paste, send what we have.
       if (isPaste) {

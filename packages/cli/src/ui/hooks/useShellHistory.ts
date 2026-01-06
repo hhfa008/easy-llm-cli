@@ -42,32 +42,48 @@ async function writeHistoryFile(
   }
 }
 
-export function useShellHistory(projectRoot: string) {
+export function useShellHistory(projectRoot: string | undefined) {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [historyFilePath, setHistoryFilePath] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadHistory() {
-      const filePath = await getHistoryFilePath(projectRoot);
-      setHistoryFilePath(filePath);
-      const loadedHistory = await readHistoryFile(filePath);
-      setHistory(loadedHistory.reverse()); // Newest first
+      if (!projectRoot) {
+        setHistoryFilePath(null);
+        setHistory([]);
+        setHistoryIndex(-1);
+        return;
+      }
+
+      try {
+        const filePath = await getHistoryFilePath(projectRoot);
+        setHistoryFilePath(filePath);
+        const loadedHistory = await readHistoryFile(filePath);
+        setHistory(loadedHistory.reverse()); // Newest first
+      } catch (error) {
+        console.error('Error loading shell history:', error);
+        setHistoryFilePath(null);
+        setHistory([]);
+        setHistoryIndex(-1);
+      }
     }
-    loadHistory();
+    void loadHistory();
   }, [projectRoot]);
 
   const addCommandToHistory = useCallback(
     (command: string) => {
-      if (!command.trim() || !historyFilePath) {
+      if (!command.trim()) {
         return;
       }
       const newHistory = [command, ...history.filter((c) => c !== command)]
         .slice(0, MAX_HISTORY_LENGTH)
         .filter(Boolean);
       setHistory(newHistory);
-      // Write to file in reverse order (oldest first)
-      writeHistoryFile(historyFilePath, [...newHistory].reverse());
+      if (historyFilePath) {
+        // Write to file in reverse order (oldest first)
+        writeHistoryFile(historyFilePath, [...newHistory].reverse());
+      }
       setHistoryIndex(-1);
     },
     [history, historyFilePath],
