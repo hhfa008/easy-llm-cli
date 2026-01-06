@@ -82,7 +82,7 @@ Slash commands provide meta-level control over the CLI itself.
       - **Description:** Hide tool descriptions, showing only the tool names.
 
 - **`/quit`** (or **`/exit`**)
-  - **Description:** Exit Gemini CLI.
+  - **Description:** Exit Gemini CLI. Easy LLM CLI also writes an autosave conversation checkpoint (default tag: `autosave`) so you can resume later with `/chat resume autosave`. Disable autosave with `EASY_LLM_CLI_AUTOSAVE_CHAT=0` (or `false`/`no`), or customize the tag with `EASY_LLM_CLI_AUTOSAVE_TAG`.
 
 ## At commands (`@`)
 

@@ -833,6 +833,20 @@ export const useSlashCommandProcessor = (
         altName: 'exit',
         description: 'exit the cli',
         action: async (mainCommand, _subCommand, _args) => {
+          const autosaveTag = (() => {
+            const raw = (process.env.EASY_LLM_CLI_AUTOSAVE_TAG || '').trim();
+            const tag = raw.length > 0 ? raw : 'autosave';
+            return tag
+              .replace(/[^a-zA-Z0-9._-]+/g, '_')
+              .replace(/^_+|_+$/g, '')
+              .slice(0, 80);
+          })();
+          const autosaveDisabled = (() => {
+            const raw = process.env.EASY_LLM_CLI_AUTOSAVE_CHAT;
+            if (!raw) return false;
+            return ['0', 'false', 'no'].includes(raw.trim().toLowerCase());
+          })();
+
           const now = new Date();
           const { sessionStartTime } = session.stats;
           const wallDuration = now.getTime() - sessionStartTime.getTime();
@@ -851,7 +865,23 @@ export const useSlashCommandProcessor = (
           ]);
 
           setTimeout(() => {
-            process.exit(0);
+            if (autosaveDisabled || autosaveTag.length === 0) {
+              process.exit(0);
+              return;
+            }
+
+            const geminiClient = config?.getGeminiClient?.();
+            const chat = geminiClient?.getChat?.();
+            const history = chat?.getHistory?.() ?? [];
+            if (history.length === 0) {
+              process.exit(0);
+              return;
+            }
+
+            void logger
+              .initialize()
+              .then(() => logger.saveCheckpoint(history, autosaveTag))
+              .finally(() => process.exit(0));
           }, 100);
         },
       },
