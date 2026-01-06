@@ -81,6 +81,7 @@ export CUSTOM_LLM_TOP_P=1          # Top P (default: 1)
 
 When these variables are set, Easy LLM CLI will use your custom LLM instead of the default Gemini model.
 
+- More details: `docs/custom-llm.md`
 
 ## Examples
 
@@ -191,4 +192,3 @@ Use MCP servers to integrate your local system tools with your enterprise collab
 ```text
 > Organize my PDF invoices by month of expenditure.
 ```
-

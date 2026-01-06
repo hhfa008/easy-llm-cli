@@ -70,6 +70,8 @@ export CUSTOM_LLM_API_KEY="your-api-key"     # 你的 LLM 提供商 API 密钥
 export CUSTOM_LLM_ENDPOINT="https://api.your-llm-provider.com/v1"  # API 端点
 export CUSTOM_LLM_MODEL_NAME="your-model-name"  # 模型名称
 
+export CUSTOM_LLM_PROVIDER="your-provider-name"  # 提供商名称（可选，仅用于展示）
+
 # 可选参数
 export CUSTOM_LLM_TEMPERATURE=0.7  # 温度参数（默认值：0）
 export CUSTOM_LLM_MAX_TOKENS=8192  # 最大令牌数（默认值：8192）
@@ -78,6 +80,7 @@ export CUSTOM_LLM_TOP_P=1          # Top P 参数（默认值：1）
 
 当这些变量设置后，Easy LLM 命令行工具将使用你的自定义 LLM，而非默认的 Gemini 模型。
 
+- 详细说明：`docs/custom-llm.zh-CN.md`
 
 ## 示例
 
