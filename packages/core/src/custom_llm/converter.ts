@@ -37,6 +37,10 @@ export class ModelConverter {
         content.role === 'model' ? 'assistant' : (content.role as string);
       const parts = content.parts || [];
       this.processTextParts(parts, role, messages);
+      const hasFunctionResponses = parts.some(isValidFunctionResponse);
+      if (role === 'user' && !hasFunctionResponses) {
+        this.processImageParts(parts, messages);
+      }
       this.processFunctionResponseParts(parts, messages);
       this.processFunctionCallParts(parts, messages);
     }
